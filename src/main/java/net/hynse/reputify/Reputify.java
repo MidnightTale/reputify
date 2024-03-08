@@ -5,7 +5,6 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
-import java.util.HashMap;
 
 public class Reputify extends JavaPlugin {
 
@@ -27,11 +26,8 @@ public class Reputify extends JavaPlugin {
         // Initialize MongoDBManager
         mongoDBManager = new MongoDBManager(connectionString, databaseName, collectionName);
 
-        // Initialize ReputationManager with an empty cache
-        ReputationManager reputationManager = new ReputationManager(new HashMap<>());
-
         // Register events
-        getServer().getPluginManager().registerEvents(new EventListener(mongoDBManager, reputationManager), this);
+        getServer().getPluginManager().registerEvents(new EventListener(mongoDBManager), this);
     }
 
     @Override

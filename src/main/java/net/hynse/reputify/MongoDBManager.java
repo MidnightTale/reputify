@@ -1,15 +1,13 @@
-/**
- * MongoDBManager Class
- * Manages MongoDB operations for player reputation.
- */
 package net.hynse.reputify;
 
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.UpdateOptions;
 import org.bson.Document;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import static com.mongodb.client.model.Filters.eq;
@@ -44,5 +42,31 @@ public class MongoDBManager {
                 .append("reputation_points", 0);
 
         reputationCollection.insertOne(document);
+    }
+
+    public void updatePlayerReputation(UUID playerId, int newPoints) {
+        // Retrieve player's current reputation document
+        Document playerDocument = reputationCollection.find(eq("player_id", playerId.toString())).first();
+
+        // Extract previous reputation points
+        int previousPoints = playerDocument.getInteger("reputation_points");
+
+        // Prepare document for update
+        Document updateDocument = new Document("$set", new Document("reputation_points", newPoints));
+
+        // Get the current timestamp
+        LocalDateTime currentTime = LocalDateTime.now();
+
+        // Add transition information
+        updateDocument.append("$push", new Document("transitions", new Document("previous_points", previousPoints)
+                .append("new_points", newPoints)
+                .append("timestamp", currentTime.toString())));
+
+        // Update player's reputation points in MongoDB
+        reputationCollection.updateOne(
+                eq("player_id", playerId.toString()),
+                updateDocument,
+                new UpdateOptions().upsert(true)
+        );
     }
 }
