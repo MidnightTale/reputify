@@ -9,6 +9,8 @@ import org.bukkit.event.player.PlayerJoinEvent;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 public class EventListener implements Listener {
@@ -18,6 +20,11 @@ public class EventListener implements Listener {
     public EventListener(MongoDBManager mongoDBManager) {
         this.mongoDBManager = mongoDBManager;
     }
+    // Define a cooldown period in milliseconds (e.g., 3 minutes)
+    private static final long COOLDOWN_PERIOD = 3 * 60 * 1000; // 3 minutes in milliseconds
+
+    // Use a hashmap to store recent kills with timestamps
+    private Map<UUID, Map<UUID, Long>> recentKills = new HashMap<>();
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
@@ -38,59 +45,82 @@ public class EventListener implements Listener {
             UUID victimId = victim.getUniqueId();
             UUID killerId = killer.getUniqueId();
 
+            // Check if killer's recent kills map exists, if not create it
+            recentKills.putIfAbsent(killerId, new HashMap<>());
+
+            // Check if the victim is in the killer's recent kills map
+            if (recentKills.get(killerId).containsKey(victimId)) {
+                long lastKillTime = recentKills.get(killerId).get(victimId);
+                long currentTime = System.currentTimeMillis();
+
+                // Check if the cooldown period has passed since the last kill
+                if (currentTime - lastKillTime < COOLDOWN_PERIOD) {
+                    // Apply cooldown logic here (e.g., ignore the kill or penalize the killer)
+                    return;
+                }
+            }
+            recentKills.get(killerId).put(victimId, System.currentTimeMillis());
+
             int victimPoints = mongoDBManager.getPlayerReputation(victimId).getInteger("reputation_points");
             int killerPoints = mongoDBManager.getPlayerReputation(killerId).getInteger("reputation_points");
 
             int newKillerPoints;
-            int newVictimPoints;
 
             switch (getReputationScenario(victimPoints, killerPoints)) {
                 case SCENARIO_1:
-                    // X positive rep kill G negative rep / X will get + / G no change
-                    newKillerPoints = killerPoints + 1;
+                    newKillerPoints = killerPoints - 1;
                     mongoDBManager.updatePlayerReputation(killerId, newKillerPoints);
                     logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
                     break;
 
                 case SCENARIO_4:
-                    // X positive rep kill G positive rep / X will get - / G rep no change
                     newKillerPoints = killerPoints - 1;
                     mongoDBManager.updatePlayerReputation(killerId, newKillerPoints);
                     logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
                     break;
 
                 case SCENARIO_5:
-                    // X positive rep kill G 0 rep / X will get - / 0 will get no change
                     newKillerPoints = killerPoints - 1;
                     mongoDBManager.updatePlayerReputation(killerId, newKillerPoints);
                     logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
                     break;
 
                 case SCENARIO_7:
-                    // X 0 rep kill G positive rep / X will get - / G will get no change
-                    newKillerPoints = killerPoints - 1;
+                    newKillerPoints = killerPoints + 1;
                     mongoDBManager.updatePlayerReputation(killerId, newKillerPoints);
                     logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
                     break;
 
                 case SCENARIO_3:
-                    // X negative rep kill G positive rep / X will get - / G will get no change
                     newKillerPoints = killerPoints - 1;
                     mongoDBManager.updatePlayerReputation(killerId, newKillerPoints);
                     logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
                     break;
 
                 case SCENARIO_6:
-                    // X negative rep kill G 0 rep / X will get - / G will get no change
-                    newKillerPoints = killerPoints - 1;
+                    newKillerPoints = killerPoints + 1;
                     mongoDBManager.updatePlayerReputation(killerId, newKillerPoints);
                     logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
                     break;
 
                 case SCENARIO_2:
+                    newKillerPoints = killerPoints + 1;
+                    mongoDBManager.updatePlayerReputation(killerId, newKillerPoints);
+                    logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
+                    break;
                 case SCENARIO_8:
+                    newKillerPoints = killerPoints + 1;
+                    mongoDBManager.updatePlayerReputation(killerId, newKillerPoints);
+                    logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
+                    break;
                 case SCENARIO_9:
-                    // No change scenarios, do nothing
+                    newKillerPoints = killerPoints - 1;
+                    mongoDBManager.updatePlayerReputation(killerId, newKillerPoints);
+                    logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
+                    break;
+                case NO_CHANGE:
+                    newKillerPoints = killerPoints;
+                    logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
                     break;
             }
         }
@@ -100,33 +130,26 @@ public class EventListener implements Listener {
 
     // Helper method to determine the reputation scenario
     private ReputationScenario getReputationScenario(int victimPoints, int killerPoints) {
-        if (victimPoints > 0 && killerPoints < 0) {
-            // X positive rep kills G negative rep
+        if (victimPoints > 0 && killerPoints < 0) { // killerPoints -1
             return ReputationScenario.SCENARIO_1;
-        } else if (victimPoints > 0 && killerPoints > 0) {
-            // X positive rep kills G positive rep
+        } else if (victimPoints > 0 && killerPoints > 0) { // killerPoints -1
             return ReputationScenario.SCENARIO_4;
-        } else if (victimPoints > 0 && killerPoints == 0) {
-            // X positive rep kills G 0 rep
+        } else if (victimPoints > 0 && killerPoints == 0) { // killerPoints -1
             return ReputationScenario.SCENARIO_5;
-        } else if (victimPoints < 0 && killerPoints < 0) {
-            // X negative rep kills G negative rep
+        } else if (victimPoints < 0 && killerPoints < 0) { // no change
             return ReputationScenario.NO_CHANGE;
-        } else if (victimPoints < 0 && killerPoints > 0) {
-            // X negative rep kills G positive rep
+        } else if (victimPoints < 0 && killerPoints > 0) { // killerPoints +1
             return ReputationScenario.SCENARIO_6;
-        } else if (victimPoints < 0 && killerPoints == 0) {
-            // X negative rep kills G 0 rep
+        } else if (victimPoints < 0 && killerPoints == 0) { // killerPoints +1
             return ReputationScenario.SCENARIO_7;
-        } else if (victimPoints == 0 && killerPoints == 0) {
-            // X 0 rep kills G 0 rep
+        } else if (victimPoints == 0 && killerPoints == 0) { // killerPoints -1
             return ReputationScenario.SCENARIO_2;
-        } else if (victimPoints == 0 && killerPoints > 0) {
-            // X 0 rep kills G positive rep
+        } else if (victimPoints == 0 && killerPoints > 0) { // killerPoints +1
             return ReputationScenario.SCENARIO_8;
-        } else if (victimPoints == 0 && killerPoints < 0) {
-            // X 0 rep kills G negative rep
+        } else if (victimPoints == 0 && killerPoints < 0) { // killerPoints -1
             return ReputationScenario.SCENARIO_9;
+        } else if (victimPoints > 0 && killerPoints < 0) { // killerPoints +1
+            return ReputationScenario.SCENARIO_3;
         } else {
             // No change for other scenarios
             return ReputationScenario.NO_CHANGE;
