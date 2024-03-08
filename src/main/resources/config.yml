@@ -1,4 +1,4 @@
 mongodb:
   connectionString: "mongodb://username:password@localhost:27017/?authSource=admin"
-  databaseName: "Reputify"
-  collectionName: "reputation"
+  databaseName: "DatabaseName"
+  collectionName: "Reputify"

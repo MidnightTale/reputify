@@ -1,5 +1,52 @@
 name: reputify
-version: '${version}'
+version: '1.0.0'
 main: net.hynse.reputify.Reputify
 api-version: '1.20'
 folia-supported: true
+
+commands:
+  setrep:
+    description: Set player's reputation
+    usage: /setrep <player> <amount>
+    permission: reputify.setrep
+
+  addrep:
+    description: Add reputation to a player
+    usage: /addrep <player> <amount>
+    permission: reputify.addrep
+
+  removerep:
+    description: Remove reputation from a player
+    usage: /removerep <player> <amount>
+    permission: reputify.removerep
+
+  viewrep:
+    description: View a player's reputation
+    usage: /viewrep <player>
+    permission: reputify.viewrep
+
+  tellrep:
+    description: Tell a player their own reputation
+    usage: /tellrep <player>
+    permission: reputify.tellrep
+
+permissions:
+  reputify.setrep:
+    description: Allows setting a player's reputation
+    default: op
+
+  reputify.addrep:
+    description: Allows adding reputation to a player
+    default: op
+
+  reputify.removerep:
+    description: Allows removing reputation from a player
+    default: op
+
+  reputify.viewrep:
+    description: Allows viewing a player's reputation
+    default: true
+
+  reputify.tellrep:
+    description: Allows telling a player their own reputation
+    default: true

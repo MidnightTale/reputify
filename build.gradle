@@ -57,6 +57,7 @@ processResources {
 // Configure the shadowJar task
 shadowJar {
     // Define the desired JAR file name format
+    relocate 'org.mongodb', 'net.hynse.lib.mongodb'
     archiveFileName.set("${rootProject.name}-${version}.jar")
 }
 

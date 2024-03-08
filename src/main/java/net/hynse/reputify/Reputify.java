@@ -4,7 +4,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.io.File;
+import java.util.Objects;
 
 public class Reputify extends JavaPlugin {
 
@@ -12,40 +12,37 @@ public class Reputify extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        // Initialize MongoDB's connection details with default values
-        String connectionString = "mongodb://username:password@localhost:27017/?authSource=admin";
-        String databaseName = "DatabaseName";
-        String collectionName = "Reputify";
-
-        // Load configuration from file if present
-        FileConfiguration config = loadConfig();
-        connectionString = config.getString("mongodb.connectionString", connectionString);
-        databaseName = config.getString("mongodb.databaseName", databaseName);
-        collectionName = config.getString("mongodb.collectionName", collectionName);
+        // Load MongoDB's connection details from config.yml
+        MongoDBConfig mongoDBConfig = loadMongoDBConfig();
 
         // Initialize MongoDBManager
-        mongoDBManager = new MongoDBManager(connectionString, databaseName, collectionName);
+        mongoDBManager = new MongoDBManager(
+                mongoDBConfig.getConnectionString(),
+                mongoDBConfig.getDatabaseName(),
+                mongoDBConfig.getCollectionName()
+        );
 
         // Register events
+        Objects.requireNonNull(getCommand("setrep")).setExecutor(new ReputationCommands(mongoDBManager));
+        Objects.requireNonNull(getCommand("addrep")).setExecutor(new ReputationCommands(mongoDBManager));
+        Objects.requireNonNull(getCommand("removerep")).setExecutor(new ReputationCommands(mongoDBManager));
+        Objects.requireNonNull(getCommand("viewrep")).setExecutor(new ReputationCommands(mongoDBManager));
+        Objects.requireNonNull(getCommand("tellrep")).setExecutor(new ReputationCommands(mongoDBManager));
         getServer().getPluginManager().registerEvents(new EventListener(mongoDBManager), this);
     }
 
     @Override
     public void onDisable() {
-        // Close MongoDB connection and unregister events on plugin disable
-        if (mongoDBManager != null) {
-            mongoDBManager.closeConnection();
-        }
         HandlerList.unregisterAll(this);
     }
 
-    private FileConfiguration loadConfig() {
-        File configFile = new File(getDataFolder(), "config.yml");
-        if (!configFile.exists()) {
-            // Save the default config.yml if it doesn't exist
-            saveResource("config.yml", false);
-        }
+    private MongoDBConfig loadMongoDBConfig() {
+        // Load MongoDB connection details from config.yml
+        FileConfiguration config = getConfig();
+        String connectionString = config.getString("mongodb.connectionString", "");
+        String databaseName = config.getString("mongodb.databaseName", "");
+        String collectionName = config.getString("mongodb.collectionName", "");
 
-        return getConfig();
+        return new MongoDBConfig(connectionString, databaseName, collectionName);
     }
 }
