@@ -1,0 +1,5 @@
+name: reputify
+version: '${version}'
+main: net.hynse.reputify.Reputify
+api-version: '1.20'
+folia-supported: true

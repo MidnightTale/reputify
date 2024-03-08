@@ -1,0 +1,82 @@
+plugins {
+    id 'java'
+}
+
+group = 'net.hynse'
+version = '1.0-SNAPSHOT'
+
+// Load properties from gradle.properties
+def props = new Properties()
+file('gradle.properties').withInputStream { props.load(it) }
+
+repositories {
+    mavenCentral()
+    maven {
+        name = "papermc-repo"
+        url = "https://repo.papermc.io/repository/maven-public/"
+    }
+    maven {
+        name = "sonatype"
+        url = "https://oss.sonatype.org/content/groups/public/"
+    }
+}
+
+dependencies {
+    compileOnly "dev.folia:folia-api:1.20.1-R0.1-SNAPSHOT"
+    implementation 'org.mongodb:mongodb-driver-sync:5.0.0'
+}
+
+def targetJavaVersion = 17
+java {
+    def javaVersion = JavaVersion.toVersion(targetJavaVersion)
+    sourceCompatibility = javaVersion
+    targetCompatibility = javaVersion
+    if (JavaVersion.current() < javaVersion) {
+        toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+
+    if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
+        options.release.set(targetJavaVersion)
+    }
+}
+
+processResources {
+    // Add properties to be expanded in resource files
+    inputs.properties props
+    filteringCharset 'UTF-8'
+    filesMatching('plugin.yml') {
+        expand props
+    }
+}
+
+// Configure the jar task to include the build time in the JAR file name
+tasks.named('jar') {
+    // Define the desired JAR file name format
+    def jarFileName = "${rootProject.name}-${version}.jar"
+    // Set the JAR file name
+    archiveFileName.set(jarFileName)
+}
+
+// Define a custom task to copy the JAR file to the server location for the 'dev' build type
+task copyToServer(type: Exec) {
+    dependsOn jar  // Make sure the 'jar' task is executed first
+
+    // Use properties from gradle.properties
+    def sshKey = props['server.ssh.key']
+    def port = props['server.port']
+    def destinationDir = props['server.destination']
+
+    // Use the output directory and file name from the 'jar' task
+    def jarFile = jar.archiveFile.get().asFile
+
+    commandLine 'scp', '-i', sshKey, '-P', port, jarFile, destinationDir
+}
+
+// Add a new task for the 'dev' build type to copy the JAR to the server
+tasks.register('dev') {
+    finalizedBy copyToServer
+}
