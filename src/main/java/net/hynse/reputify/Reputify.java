@@ -15,8 +15,8 @@ public class Reputify extends JavaPlugin {
     public void onEnable() {
         // Initialize MongoDB's connection details with default values
         String connectionString = "mongodb://username:password@localhost:27017/?authSource=admin";
-        String databaseName = "yourDatabaseName";
-        String collectionName = "reputation";
+        String databaseName = "DatabaseName";
+        String collectionName = "Reputify";
 
         // Load configuration from file if present
         FileConfiguration config = loadConfig();
