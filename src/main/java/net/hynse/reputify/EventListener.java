@@ -1,7 +1,3 @@
-/**
- * EventListener Class
- * Listens to player join and death events for managing reputations.
- */
 package net.hynse.reputify;
 
 import org.bukkit.entity.Player;
@@ -29,10 +25,8 @@ public class EventListener implements Listener {
 
         // Load reputation from cache or MongoDB on player join
         if (reputationManager.getReputation(playerId) != 0) {
-            // Set reputation from MongoDB if cache is empty
             reputationManager.setReputation(playerId, mongoDBManager.getPlayerReputation(playerId).getInteger("reputation_points", 0));
         } else {
-            // Insert new player's reputation into MongoDB
             mongoDBManager.insertPlayerReputation(playerId);
         }
     }
@@ -46,7 +40,6 @@ public class EventListener implements Listener {
             int victimPoints = reputationManager.getReputation(victim.getUniqueId());
             int killerPoints = reputationManager.getReputation(killer.getUniqueId());
 
-            // Update reputations based on player death
             if (victimPoints == 0 && killerPoints >= 0) {
                 reputationManager.decreaseReputation(killer.getUniqueId(), 1);
             } else if (victimPoints < 0 && killerPoints >= 0) {

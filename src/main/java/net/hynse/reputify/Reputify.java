@@ -1,11 +1,11 @@
 package net.hynse.reputify;
 
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.io.InputStream;
+import java.io.File;
 import java.util.HashMap;
-import java.util.Properties;
 
 public class Reputify extends JavaPlugin {
 
@@ -13,13 +13,16 @@ public class Reputify extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        // Load configuration from file
-        Properties config = loadConfig();
+        // Initialize MongoDB's connection details with default values
+        String connectionString = "mongodb://username:password@localhost:27017/?authSource=admin";
+        String databaseName = "yourDatabaseName";
+        String collectionName = "reputation";
 
-        // MongoDB's connection details
-        String connectionString = config.getProperty("mongodb.connectionString");
-        String databaseName = config.getProperty("mongodb.databaseName");
-        String collectionName = config.getProperty("mongodb.collectionName");
+        // Load configuration from file if present
+        FileConfiguration config = loadConfig();
+        connectionString = config.getString("mongodb.connectionString", connectionString);
+        databaseName = config.getString("mongodb.databaseName", databaseName);
+        collectionName = config.getString("mongodb.collectionName", collectionName);
 
         // Initialize MongoDBManager
         mongoDBManager = new MongoDBManager(connectionString, databaseName, collectionName);
@@ -34,17 +37,19 @@ public class Reputify extends JavaPlugin {
     @Override
     public void onDisable() {
         // Close MongoDB connection and unregister events on plugin disable
-        mongoDBManager.closeConnection();
+        if (mongoDBManager != null) {
+            mongoDBManager.closeConnection();
+        }
         HandlerList.unregisterAll(this);
     }
 
-    private Properties loadConfig() {
-        Properties properties = new Properties();
-        try (InputStream input = getResource("config.properties")) {
-            properties.load(input);
-        } catch (Exception e) {
-            getLogger().severe("Error loading configuration: " + e.getMessage());
+    private FileConfiguration loadConfig() {
+        File configFile = new File(getDataFolder(), "config.yml");
+        if (!configFile.exists()) {
+            // Save the default config.yml if it doesn't exist
+            saveResource("config.yml", false);
         }
-        return properties;
+
+        return getConfig();
     }
 }
