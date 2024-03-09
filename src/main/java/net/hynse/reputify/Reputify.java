@@ -9,9 +9,14 @@ import java.util.Objects;
 public class Reputify extends JavaPlugin {
 
     private MongoDBManager mongoDBManager;
+    private static Reputify instance;
+    public static Reputify getInstance() {
+        return instance;
+    }
 
     @Override
     public void onEnable() {
+        instance = this;
         // Load MongoDB's connection details from config.yml
         MongoDBConfig mongoDBConfig = loadMongoDBConfig();
 

@@ -6,6 +6,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -15,7 +16,6 @@ import java.util.UUID;
 
 public class EventListener implements Listener {
 
-    // Map to store recent kills
     // Map to store recent kills
     private final Map<UUID, Map<UUID, Long>> recentKills = new HashMap<>();
     private final MongoDBManager mongoDBManager;
@@ -58,72 +58,76 @@ public class EventListener implements Listener {
             }
 
             addRecentKill(killerId, victimId);
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    int victimPoints = mongoDBManager.getPlayerReputation(victimId).getInteger("reputation_points");
+                    int killerPoints = mongoDBManager.getPlayerReputation(killerId).getInteger("reputation_points");
 
-            int victimPoints = mongoDBManager.getPlayerReputation(victimId).getInteger("reputation_points");
-            int killerPoints = mongoDBManager.getPlayerReputation(killerId).getInteger("reputation_points");
+                    int newKillerPoints;
 
-            int newKillerPoints;
+                    switch (getReputationScenario(victimPoints, killerPoints)) {
+                        case SCENARIO_1:
+                            newKillerPoints = killerPoints - 1;
+                            mongoDBManager.updatePlayerReputation(killerId, newKillerPoints);
+                            logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
+                            break;
 
-            switch (getReputationScenario(victimPoints, killerPoints)) {
-                case SCENARIO_1:
-                    newKillerPoints = killerPoints - 1;
-                    mongoDBManager.updatePlayerReputation(killerId, newKillerPoints);
-                    logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
-                    break;
+                        case SCENARIO_4:
+                            newKillerPoints = killerPoints - 1;
+                            mongoDBManager.updatePlayerReputation(killerId, newKillerPoints);
+                            logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
+                            break;
 
-                case SCENARIO_4:
-                    newKillerPoints = killerPoints - 1;
-                    mongoDBManager.updatePlayerReputation(killerId, newKillerPoints);
-                    logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
-                    break;
+                        case SCENARIO_5:
+                            newKillerPoints = killerPoints - 1;
+                            mongoDBManager.updatePlayerReputation(killerId, newKillerPoints);
+                            logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
+                            break;
 
-                case SCENARIO_5:
-                    newKillerPoints = killerPoints - 1;
-                    mongoDBManager.updatePlayerReputation(killerId, newKillerPoints);
-                    logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
-                    break;
+                        case SCENARIO_7:
+                            newKillerPoints = killerPoints + 1;
+                            mongoDBManager.updatePlayerReputation(killerId, newKillerPoints);
+                            logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
+                            break;
 
-                case SCENARIO_7:
-                    newKillerPoints = killerPoints + 1;
-                    mongoDBManager.updatePlayerReputation(killerId, newKillerPoints);
-                    logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
-                    break;
+                        case SCENARIO_3:
+                            newKillerPoints = killerPoints - 1;
+                            mongoDBManager.updatePlayerReputation(killerId, newKillerPoints);
+                            logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
+                            break;
 
-                case SCENARIO_3:
-                    newKillerPoints = killerPoints - 1;
-                    mongoDBManager.updatePlayerReputation(killerId, newKillerPoints);
-                    logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
-                    break;
+                        case SCENARIO_6:
+                            newKillerPoints = killerPoints + 1;
+                            mongoDBManager.updatePlayerReputation(killerId, newKillerPoints);
+                            logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
+                            break;
 
-                case SCENARIO_6:
-                    newKillerPoints = killerPoints + 1;
-                    mongoDBManager.updatePlayerReputation(killerId, newKillerPoints);
-                    logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
-                    break;
+                        case SCENARIO_2:
+                            newKillerPoints = killerPoints - 1;
+                            mongoDBManager.updatePlayerReputation(killerId, newKillerPoints);
+                            logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
+                            break;
+                        case SCENARIO_8:
+                            newKillerPoints = killerPoints - 1;
+                            mongoDBManager.updatePlayerReputation(killerId, newKillerPoints);
+                            logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
+                            break;
+                        case SCENARIO_9:
+                            newKillerPoints = killerPoints - 1;
+                            mongoDBManager.updatePlayerReputation(killerId, newKillerPoints);
+                            logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
+                            break;
+                        case NO_CHANGE:
+                            newKillerPoints = killerPoints;
+                            logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
+                            break;
+                    }
 
-                case SCENARIO_2:
-                    newKillerPoints = killerPoints - 1;
-                    mongoDBManager.updatePlayerReputation(killerId, newKillerPoints);
-                    logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
-                    break;
-                case SCENARIO_8:
-                    newKillerPoints = killerPoints - 1;
-                    mongoDBManager.updatePlayerReputation(killerId, newKillerPoints);
-                    logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
-                    break;
-                case SCENARIO_9:
-                    newKillerPoints = killerPoints - 1;
-                    mongoDBManager.updatePlayerReputation(killerId, newKillerPoints);
-                    logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
-                    break;
-                case NO_CHANGE:
-                    newKillerPoints = killerPoints;
-                    logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
-                    break;
-            }
+                }
+            }.runTaskAsynchronously(Reputify.getInstance());
 
         }
-
     }
 
 
