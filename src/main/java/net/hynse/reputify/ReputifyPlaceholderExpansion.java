@@ -47,7 +47,7 @@ public class ReputifyPlaceholderExpansion extends PlaceholderExpansion {
 
         // Handle %reputify_player%
         if (identifier.equals("player")) {
-            return player.getName();
+            return String.valueOf(reputationManager.getPlayerReputation(player.getUniqueId()).getInteger("reputation_points"));
         }
 
         // Handle %reputify_player_{name}%
@@ -58,6 +58,7 @@ public class ReputifyPlaceholderExpansion extends PlaceholderExpansion {
 
         return null;
     }
+
 
     private String getPrefix() {
         return "Prefix";
