@@ -50,3 +50,5 @@ permissions:
   reputify.tellrep:
     description: Allows telling a player their own reputation
     default: true
+soft-depend:
+  - PlaceholderAPI

@@ -1,50 +1,56 @@
 package net.hynse.reputify;
 
-import me.nahu.scheduler.wrapper.WrappedScheduler;
-import me.nahu.scheduler.wrapper.WrappedSchedulerBuilder;
+import me.nahu.scheduler.wrapper.FoliaWrappedJavaPlugin;
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.event.HandlerList;
-import org.bukkit.plugin.java.JavaPlugin;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
+import java.util.logging.Level;
 
-public class Reputify extends JavaPlugin {
+public class Reputify extends FoliaWrappedJavaPlugin {
 
-    private MongoDBManager mongoDBManager;
-    private static Reputify instance;
-
-    public static @NotNull WrappedScheduler getInstance() {
-        return (WrappedScheduler) instance;
-    }
-    final WrappedSchedulerBuilder schedulerBuilder = WrappedSchedulerBuilder.builder().plugin(getPlugin(Reputify.class));
-    final WrappedScheduler scheduler = schedulerBuilder.build();
+    public static Reputify instance;
 
     @Override
     public void onEnable() {
         instance = this;
+
         // Load MongoDB's connection details from config.yml
         MongoDBConfig mongoDBConfig = loadMongoDBConfig();
 
         // Initialize MongoDBManager
-        mongoDBManager = new MongoDBManager(
+        MongoDBManager mongoDBManager = new MongoDBManager(
                 mongoDBConfig.getConnectionString(),
                 mongoDBConfig.getDatabaseName(),
                 mongoDBConfig.getCollectionName()
         );
+        ReputationManager reputationManager = new ReputationManager(mongoDBManager);
 
-        // Register events
+        // Check if PlaceholderAPI is enabled
+        if (Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+            // Pass ReputationManager instance to ReputifyPlaceholderExpansion constructor
+            new ReputifyPlaceholderExpansion(reputationManager).register();
+            getLogger().log(Level.INFO, "PlaceholderAPI Hooked");
+        } else {
+            getLogger().log(Level.WARNING, "PlaceholderAPI not found. Some features may not work.");
+        }
+
+        // Register events and commands
         Objects.requireNonNull(getCommand("setrep")).setExecutor(new ReputationCommands(mongoDBManager));
         Objects.requireNonNull(getCommand("addrep")).setExecutor(new ReputationCommands(mongoDBManager));
         Objects.requireNonNull(getCommand("removerep")).setExecutor(new ReputationCommands(mongoDBManager));
         Objects.requireNonNull(getCommand("viewrep")).setExecutor(new ReputationCommands(mongoDBManager));
         Objects.requireNonNull(getCommand("tellrep")).setExecutor(new ReputationCommands(mongoDBManager));
-        getServer().getPluginManager().registerEvents(new EventListener(mongoDBManager), this);
+        getServer().getPluginManager().registerEvents(new EventListener(reputationManager), this);
+
+        getLogger().log(Level.INFO, "Reputify has been enabled.");
     }
 
     @Override
     public void onDisable() {
         HandlerList.unregisterAll(this);
+        getLogger().log(Level.INFO, "Reputify has been disabled.");
     }
 
     private MongoDBConfig loadMongoDBConfig() {

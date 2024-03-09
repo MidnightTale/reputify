@@ -1,28 +1,28 @@
 package net.hynse.reputify;
 
 import me.nahu.scheduler.wrapper.runnable.WrappedRunnable;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
+import static net.hynse.reputify.ReputationChangeLogger.logReputationChange;
+import static net.hynse.reputify.ReputationUtils.*;
 
 public class EventListener implements Listener {
 
     // Map to store recent kills
     private final Map<UUID, Map<UUID, Long>> recentKills = new HashMap<>();
-    private final MongoDBManager mongoDBManager;
+    private final ReputationManager reputationManager;
 
     // Constructor to initialize the MongoDBManager
-    public EventListener(MongoDBManager mongoDBManager) {
-        this.mongoDBManager = mongoDBManager;
+    public EventListener(ReputationManager reputationManager) {
+        this.reputationManager = reputationManager;
     }
 
 
@@ -33,6 +33,7 @@ public class EventListener implements Listener {
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         UUID playerId = player.getUniqueId();
+        //reputationManager.updatePlayerDisplayName(event.getPlayer());
 
         // Load reputation from HashMap on player join
         recentKills.put(playerId, new HashMap<>());
@@ -40,6 +41,7 @@ public class EventListener implements Listener {
 
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent event) {
+        //reputationManager.updatePlayerDisplayName(event.getPlayer());
         Player victim = event.getEntity();
         Player killer = event.getEntity().getKiller();
 
@@ -51,71 +53,71 @@ public class EventListener implements Listener {
             recentKills.computeIfAbsent(killerId, k -> new HashMap<>());
 
             // Check if the victim is in the killer's recent kills map
-            if (hasRecentKill(killerId, victimId, COOLDOWN_PERIOD)) {
-                long remainingCooldown = calculateRemainingCooldown(killerId, victimId, COOLDOWN_PERIOD);
+            if (hasRecentKill(killerId, victimId, COOLDOWN_PERIOD, recentKills)) {
+                long remainingCooldown = calculateRemainingCooldown(COOLDOWN_PERIOD, getRecentKillTime(killerId, victimId, recentKills));
                 killer.sendMessage("Remaining cooldown time: " + remainingCooldown + " milliseconds");
                 return;
             }
 
-            addRecentKill(killerId, victimId);
+            addRecentKill(killerId, victimId, recentKills);
             new WrappedRunnable() {
                 @Override
                 public void run() {
-                    int victimPoints = mongoDBManager.getPlayerReputation(victimId).getInteger("reputation_points");
-                    int killerPoints = mongoDBManager.getPlayerReputation(killerId).getInteger("reputation_points");
+                    int victimPoints = reputationManager.getPlayerReputation(victimId).getInteger("reputation_points");
+                    int killerPoints = reputationManager.getPlayerReputation(killerId).getInteger("reputation_points");
 
                     int newKillerPoints;
 
                     switch (getReputationScenario(victimPoints, killerPoints)) {
                         case SCENARIO_1:
-                            newKillerPoints = killerPoints - 1;
-                            mongoDBManager.updatePlayerReputation(killerId, newKillerPoints);
+                            newKillerPoints = killerPoints - 3;
+                            reputationManager.updatePlayerReputation(killerId, newKillerPoints);
                             logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
                             break;
 
                         case SCENARIO_4:
                             newKillerPoints = killerPoints - 1;
-                            mongoDBManager.updatePlayerReputation(killerId, newKillerPoints);
+                            reputationManager.updatePlayerReputation(killerId, newKillerPoints);
                             logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
                             break;
 
                         case SCENARIO_5:
-                            newKillerPoints = killerPoints - 1;
-                            mongoDBManager.updatePlayerReputation(killerId, newKillerPoints);
+                            newKillerPoints = killerPoints - 2;
+                            reputationManager.updatePlayerReputation(killerId, newKillerPoints);
                             logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
                             break;
 
                         case SCENARIO_7:
-                            newKillerPoints = killerPoints + 1;
-                            mongoDBManager.updatePlayerReputation(killerId, newKillerPoints);
+                            newKillerPoints = killerPoints + 2;
+                            reputationManager.updatePlayerReputation(killerId, newKillerPoints);
                             logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
                             break;
 
                         case SCENARIO_3:
-                            newKillerPoints = killerPoints - 1;
-                            mongoDBManager.updatePlayerReputation(killerId, newKillerPoints);
+                            newKillerPoints = killerPoints - 2;
+                            reputationManager.updatePlayerReputation(killerId, newKillerPoints);
                             logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
                             break;
 
                         case SCENARIO_6:
-                            newKillerPoints = killerPoints + 1;
-                            mongoDBManager.updatePlayerReputation(killerId, newKillerPoints);
+                            newKillerPoints = killerPoints + 3;
+                            reputationManager.updatePlayerReputation(killerId, newKillerPoints);
                             logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
                             break;
 
                         case SCENARIO_2:
                             newKillerPoints = killerPoints - 1;
-                            mongoDBManager.updatePlayerReputation(killerId, newKillerPoints);
+                            reputationManager.updatePlayerReputation(killerId, newKillerPoints);
                             logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
                             break;
                         case SCENARIO_8:
                             newKillerPoints = killerPoints - 1;
-                            mongoDBManager.updatePlayerReputation(killerId, newKillerPoints);
+                            reputationManager.updatePlayerReputation(killerId, newKillerPoints);
                             logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
                             break;
                         case SCENARIO_9:
                             newKillerPoints = killerPoints - 1;
-                            mongoDBManager.updatePlayerReputation(killerId, newKillerPoints);
+                            reputationManager.updatePlayerReputation(killerId, newKillerPoints);
                             logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
                             break;
                         case NO_CHANGE:
@@ -125,105 +127,8 @@ public class EventListener implements Listener {
                     }
 
                 }
-            }.runTaskAsynchronously(Reputify.getInstance());
+            }.runTaskAsynchronously(Reputify.instance);
 
         }
-    }
-
-
-
-    // Helper method to determine the reputation scenario
-    private ReputationScenario getReputationScenario(int victimPoints, int killerPoints) {
-        if (victimPoints > 0 && killerPoints < 0) { // killerPoints -1
-            return ReputationScenario.SCENARIO_1;
-        } else if (victimPoints > 0 && killerPoints > 0) { // killerPoints -1
-            return ReputationScenario.SCENARIO_4;
-        } else if (victimPoints > 0 && killerPoints == 0) { // killerPoints -1
-            return ReputationScenario.SCENARIO_5;
-        } else if (victimPoints < 0 && killerPoints < 0) { // no change
-            return ReputationScenario.NO_CHANGE;
-        } else if (victimPoints < 0 && killerPoints > 0) { // killerPoints +1
-            return ReputationScenario.SCENARIO_6;
-        } else if (victimPoints < 0 && killerPoints == 0) { // killerPoints +1
-            return ReputationScenario.SCENARIO_7;
-        } else if (victimPoints == 0 && killerPoints == 0) { // killerPoints -1
-            return ReputationScenario.SCENARIO_2;
-        } else if (victimPoints == 0 && killerPoints > 0) { // killerPoints -1
-            return ReputationScenario.SCENARIO_8;
-        } else if (victimPoints == 0 && killerPoints < 0) { // killerPoints -1
-            return ReputationScenario.SCENARIO_9;
-        } else if (victimPoints > 0 && killerPoints < 0) { // killerPoints +1
-            return ReputationScenario.SCENARIO_3;
-        } else {
-            // No change for other scenarios
-            return ReputationScenario.NO_CHANGE;
-        }
-    }
-
-
-
-
-    // Enum to represent different reputation scenarios
-    private enum ReputationScenario {
-        SCENARIO_1,
-        SCENARIO_2,
-        SCENARIO_3,
-        SCENARIO_4,
-        SCENARIO_5,
-        SCENARIO_6,
-        SCENARIO_7,
-        SCENARIO_8,
-        SCENARIO_9,
-        NO_CHANGE
-    }
-
-
-
-    private void logReputationChange(Player player, int newPoints, ReputationScenario scenario) {
-        // Get current timestamp
-        LocalDateTime currentTime = LocalDateTime.now();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
-        // Log reputation change in game chat
-        Bukkit.getServer().getLogger().info("Player " + player.getName() + " reputation changed to " + newPoints +
-                " at " + currentTime.format(formatter) + " in scenario " + scenario);
-    }
-    // Check if a recent kill exists
-    private boolean hasRecentKill(UUID playerId, UUID victimId, long cooldownPeriod) {
-        if (recentKills.containsKey(playerId) && recentKills.get(playerId).containsKey(victimId)) {
-            long lastKillTime = recentKills.get(playerId).get(victimId);
-            long currentTime = System.currentTimeMillis();
-            return currentTime - lastKillTime < cooldownPeriod;
-        }
-        return false;
-    }
-
-    // Add a recent kill
-    private void addRecentKill(UUID playerId, UUID victimId) {
-        recentKills.computeIfAbsent(playerId, k -> new HashMap<>());
-        recentKills.get(playerId).put(victimId, System.currentTimeMillis());
-    }
-
-    // Helper method to calculate remaining cooldown
-    private long calculateRemainingCooldown(UUID killerId, UUID victimId, long cooldownPeriod) {
-        long lastKillTime = getRecentKillTime(killerId, victimId);
-        long currentTime = System.currentTimeMillis();
-
-        if (lastKillTime > 0) {
-            // Calculate remaining cooldown only if there's a recent kill
-            long elapsedTime = currentTime - lastKillTime;
-            return Math.max(0, cooldownPeriod - elapsedTime);
-        } else {
-            // No recent kill, return the full cooldown period
-            return cooldownPeriod;
-        }
-    }
-
-    // Get the time of the most recent kill
-    private long getRecentKillTime(UUID playerId, UUID victimId) {
-        if (recentKills.containsKey(playerId) && recentKills.get(playerId).containsKey(victimId)) {
-            return recentKills.get(playerId).get(victimId);
-        }
-        return 0; // Return 0 if no recent kill time is found
     }
 }

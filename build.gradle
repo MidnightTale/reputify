@@ -24,10 +24,14 @@ repositories {
         name = "jitpack"
         url = "https://jitpack.io/"
     }
+    maven {
+        url = 'https://repo.extendedclip.com/content/repositories/placeholderapi/'
+    }
 }
 
 dependencies {
     compileOnly "dev.folia:folia-api:1.20.1-R0.1-SNAPSHOT"
+    compileOnly 'me.clip:placeholderapi:2.11.5'
     implementation 'org.mongodb:mongodb-driver-sync:5.0.0'
     implementation 'com.github.NahuLD:folia-scheduler-wrapper:v0.0.2'
 }
