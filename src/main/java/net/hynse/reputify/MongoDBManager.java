@@ -19,9 +19,6 @@ public class MongoDBManager {
     private final MongoClient mongoClient;
     private final MongoCollection<Document> reputationCollection;
 
-    // Map to store recent kills
-    private Map<UUID, Map<UUID, Long>> recentKills = new HashMap<>();
-
     public MongoDBManager(String connectionString, String databaseName, String collectionName) {
         // Create MongoDB connection
         mongoClient = MongoClients.create(connectionString);
@@ -66,33 +63,6 @@ public class MongoDBManager {
                 updateDocument,
                 new UpdateOptions().upsert(true)
         );
-    }
-
-    // Initialize recent kills map for a player
-    public void initializeRecentKillsMap(UUID playerId) {
-        recentKills.put(playerId, new HashMap<>());
-    }
-
-    // Check if a recent kill exists
-    public boolean hasRecentKill(UUID playerId, UUID victimId, long cooldownPeriod) {
-        if (recentKills.containsKey(playerId) && recentKills.get(playerId).containsKey(victimId)) {
-            long lastKillTime = recentKills.get(playerId).get(victimId);
-            long currentTime = System.currentTimeMillis();
-            return currentTime - lastKillTime < cooldownPeriod;
-        }
-        return false;
-    }
-
-    // Add a recent kill
-    public void addRecentKill(UUID playerId, UUID victimId) {
-        recentKills.computeIfAbsent(playerId, k -> new HashMap<>());
-        recentKills.get(playerId).put(victimId, System.currentTimeMillis());
-    }
-    public long getRecentKillTime(UUID playerId, UUID victimId) {
-        if (recentKills.containsKey(playerId) && recentKills.get(playerId).containsKey(victimId)) {
-            return recentKills.get(playerId).get(victimId);
-        }
-        return 0; // Return 0 if no recent kill time is found
     }
 
 }
