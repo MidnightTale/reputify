@@ -3,6 +3,7 @@ package net.hynse.reputify;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
+import org.bukkit.ChatColor;
 
 public class ReputifyPlaceholderExpansion extends PlaceholderExpansion {
 
@@ -44,7 +45,23 @@ public class ReputifyPlaceholderExpansion extends PlaceholderExpansion {
         if (identifier.equals("player")) {
             return String.valueOf(reputationManager.getPlayerReputation(player.getUniqueId()).getInteger("reputation_points"));
         }
+
+        // Handle %reputify_player_colored%
+        if (identifier.equals("player_colored")) {
+            int reputationPoints = reputationManager.getPlayerReputation(player.getUniqueId()).getInteger("reputation_points");
+            ChatColor color;
+
+            if (reputationPoints > 0) {
+                color = ChatColor.GREEN; // Positive reputation
+            } else if (reputationPoints < 0) {
+                color = ChatColor.RED; // Negative reputation
+            } else {
+                color = ChatColor.YELLOW; // Neutral reputation
+            }
+
+            return color + String.valueOf(reputationPoints);
+        }
+
         return null;
     }
-
 }

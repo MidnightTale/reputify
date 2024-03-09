@@ -34,6 +34,7 @@ dependencies {
     compileOnly 'me.clip:placeholderapi:2.11.5'
     implementation 'org.mongodb:mongodb-driver-sync:5.0.0'
     implementation 'com.github.NahuLD:folia-scheduler-wrapper:v0.0.2'
+    implementation "net.kyori:adventure-api:4.16.0"
 }
 
 def targetJavaVersion = 17
