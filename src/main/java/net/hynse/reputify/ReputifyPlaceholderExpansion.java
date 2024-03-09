@@ -40,38 +40,11 @@ public class ReputifyPlaceholderExpansion extends PlaceholderExpansion {
             return "";
         }
 
-        // Handle %reputify_player_prefix%
-        if (identifier.equals("player_prefix")) {
-            return getPrefix();
-        }
-
         // Handle %reputify_player%
         if (identifier.equals("player")) {
             return String.valueOf(reputationManager.getPlayerReputation(player.getUniqueId()).getInteger("reputation_points"));
         }
-
-        // Handle %reputify_player_{name}%
-        if (identifier.startsWith("player_")) {
-            String attribute = identifier.substring("player_".length());
-            return getPlayerAttribute(player, attribute);
-        }
-
         return null;
     }
 
-
-    private String getPrefix() {
-        return "Prefix";
-    }
-
-    private String getPlayerAttribute(Player player, String attribute) {
-        return switch (attribute) {
-            case "name" -> player.getName();
-            case "uuid" -> player.getUniqueId().toString();
-            case "reputation" ->
-                    String.valueOf(reputationManager.getPlayerReputation(player.getUniqueId()).getInteger("reputation_points"));
-            case "prefix" -> reputationManager.getPlayerPrefix(player.getUniqueId());
-            default -> "";
-        };
-    }
 }
