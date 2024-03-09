@@ -20,11 +20,16 @@ repositories {
         name = "sonatype"
         url = "https://oss.sonatype.org/content/groups/public/"
     }
+    maven {
+        name = "jitpack"
+        url = "https://jitpack.io/"
+    }
 }
 
 dependencies {
     compileOnly "dev.folia:folia-api:1.20.1-R0.1-SNAPSHOT"
     implementation 'org.mongodb:mongodb-driver-sync:5.0.0'
+    implementation 'com.github.NahuLD:folia-scheduler-wrapper:v0.0.2'
 }
 
 def targetJavaVersion = 17
@@ -58,6 +63,7 @@ processResources {
 shadowJar {
     // Define the desired JAR file name format
     relocate 'org.mongodb', 'net.hynse.lib.mongodb'
+    relocate 'com.github.NahuLD', 'net.hynse.lib.scheduler-wrapper'
     archiveFileName.set("${rootProject.name}-${version}.jar")
 }
 

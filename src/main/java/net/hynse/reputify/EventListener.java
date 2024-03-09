@@ -1,12 +1,12 @@
 package net.hynse.reputify;
 
+import me.nahu.scheduler.wrapper.runnable.WrappedRunnable;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.scheduler.BukkitRunnable;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -58,7 +58,7 @@ public class EventListener implements Listener {
             }
 
             addRecentKill(killerId, victimId);
-            new BukkitRunnable() {
+            new WrappedRunnable() {
                 @Override
                 public void run() {
                     int victimPoints = mongoDBManager.getPlayerReputation(victimId).getInteger("reputation_points");

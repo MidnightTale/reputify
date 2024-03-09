@@ -1,8 +1,11 @@
 package net.hynse.reputify;
 
+import me.nahu.scheduler.wrapper.WrappedScheduler;
+import me.nahu.scheduler.wrapper.WrappedSchedulerBuilder;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
@@ -10,9 +13,12 @@ public class Reputify extends JavaPlugin {
 
     private MongoDBManager mongoDBManager;
     private static Reputify instance;
-    public static Reputify getInstance() {
+
+    public static @NotNull WrappedScheduler getInstance() {
         return instance;
     }
+    final WrappedSchedulerBuilder schedulerBuilder = WrappedSchedulerBuilder.builder().plugin(getPlugin(Reputify.class));
+    final WrappedScheduler scheduler = schedulerBuilder.build();
 
     @Override
     public void onEnable() {
