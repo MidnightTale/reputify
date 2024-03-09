@@ -92,8 +92,12 @@ public class ReputationCommands implements CommandExecutor {
                         .getInteger("reputation_points");
                 targetPlayer.sendMessage("Your reputation: " + tellRep);
                 break;
+
         }
 
+
         return true;
+
     }
+
 }

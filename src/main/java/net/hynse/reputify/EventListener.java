@@ -9,8 +9,6 @@ import org.bukkit.event.player.PlayerJoinEvent;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 
 public class EventListener implements Listener {
@@ -20,11 +18,9 @@ public class EventListener implements Listener {
     public EventListener(MongoDBManager mongoDBManager) {
         this.mongoDBManager = mongoDBManager;
     }
+
     // Define a cooldown period in milliseconds (e.g., 3 minutes)
     private static final long COOLDOWN_PERIOD = 3 * 60 * 1000; // 3 minutes in milliseconds
-
-    // Use a hashmap to store recent kills with timestamps
-    private Map<UUID, Map<UUID, Long>> recentKills = new HashMap<>();
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
@@ -36,6 +32,7 @@ public class EventListener implements Listener {
             mongoDBManager.insertPlayerReputation(playerId);
         }
     }
+
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent event) {
         Player victim = event.getEntity();
@@ -46,20 +43,16 @@ public class EventListener implements Listener {
             UUID killerId = killer.getUniqueId();
 
             // Check if killer's recent kills map exists, if not create it
-            recentKills.putIfAbsent(killerId, new HashMap<>());
+            mongoDBManager.initializeRecentKillsMap(killerId);
 
             // Check if the victim is in the killer's recent kills map
-            if (recentKills.get(killerId).containsKey(victimId)) {
-                long lastKillTime = recentKills.get(killerId).get(victimId);
-                long currentTime = System.currentTimeMillis();
-
-                // Check if the cooldown period has passed since the last kill
-                if (currentTime - lastKillTime < COOLDOWN_PERIOD) {
-                    // Apply cooldown logic here (e.g., ignore the kill or penalize the killer)
-                    return;
-                }
+            if (mongoDBManager.hasRecentKill(killerId, victimId, COOLDOWN_PERIOD)) {
+                long remainingCooldown = calculateRemainingCooldown(killer.getUniqueId(), victim.getUniqueId(), COOLDOWN_PERIOD);
+                killer.sendMessage("Remaining cooldown time: " + remainingCooldown + " milliseconds");
+                return;
             }
-            recentKills.get(killerId).put(victimId, System.currentTimeMillis());
+
+            mongoDBManager.addRecentKill(killerId, victimId);
 
             int victimPoints = mongoDBManager.getPlayerReputation(victimId).getInteger("reputation_points");
             int killerPoints = mongoDBManager.getPlayerReputation(killerId).getInteger("reputation_points");
@@ -123,7 +116,9 @@ public class EventListener implements Listener {
                     logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
                     break;
             }
+
         }
+
     }
 
 
@@ -184,5 +179,15 @@ public class EventListener implements Listener {
         Bukkit.getServer().getLogger().info("Player " + player.getName() + " reputation changed to " + newPoints +
                 " at " + currentTime.format(formatter) + " in scenario " + scenario);
     }
+    private long calculateRemainingCooldown(UUID killerId, UUID victimId, long cooldownPeriod) {
+        if (mongoDBManager.hasRecentKill(killerId, victimId, COOLDOWN_PERIOD)) {
+            long lastKillTime = mongoDBManager.getRecentKillTime(killerId, victimId);
+            long currentTime = System.currentTimeMillis();
+            long elapsedTime = currentTime - lastKillTime;
 
+            return Math.max(0, cooldownPeriod - elapsedTime);
+        }
+
+        return 0;
+    }
 }
