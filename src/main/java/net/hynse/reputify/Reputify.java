@@ -15,7 +15,7 @@ public class Reputify extends JavaPlugin {
     private static Reputify instance;
 
     public static @NotNull WrappedScheduler getInstance() {
-        return instance;
+        return (WrappedScheduler) instance;
     }
     final WrappedSchedulerBuilder schedulerBuilder = WrappedSchedulerBuilder.builder().plugin(getPlugin(Reputify.class));
     final WrappedScheduler scheduler = schedulerBuilder.build();
