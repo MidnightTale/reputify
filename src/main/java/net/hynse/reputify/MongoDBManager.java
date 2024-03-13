@@ -30,7 +30,7 @@ public class MongoDBManager {
     public void updatePlayerReputation(UUID playerId, int newPoints) {
         Document playerDocument = reputationCollection.find(eq("player_id", playerId.toString())).first();
         int previousPoints = playerDocument.getInteger("reputation_points");
-        int cappedPoints = Math.max(-10, Math.min(10, newPoints));
+        int cappedPoints = Math.max(-100, Math.min(100, newPoints));
         Document updateDocument = new Document("$set", new Document("reputation_points", cappedPoints));
         LocalDateTime currentTime = LocalDateTime.now();
         updateDocument.append("$push", new Document("transitions", new Document("previous_points", previousPoints)

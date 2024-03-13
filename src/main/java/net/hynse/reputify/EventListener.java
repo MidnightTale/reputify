@@ -27,7 +27,7 @@ public class EventListener implements Listener {
 
 
     // Define a cooldown period in milliseconds (3 minutes)
-    private static final long COOLDOWN_PERIOD = 3 * 60 * 1000;
+    private static final long COOLDOWN_PERIOD = 1 * 60 * 1000;
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
@@ -54,8 +54,8 @@ public class EventListener implements Listener {
 
             // Check if the victim is in the killer's recent kills map
             if (hasRecentKill(killerId, victimId, COOLDOWN_PERIOD, recentKills)) {
-                long remainingCooldown = calculateRemainingCooldown(COOLDOWN_PERIOD, getRecentKillTime(killerId, victimId, recentKills));
-                killer.sendMessage("Remaining cooldown time: " + remainingCooldown + " milliseconds");
+//                long remainingCooldown = calculateRemainingCooldown(COOLDOWN_PERIOD, getRecentKillTime(killerId, victimId, recentKills));
+//                killer.sendMessage("Remaining cooldown time: " + remainingCooldown + " milliseconds");
                 return;
             }
 
@@ -127,7 +127,7 @@ public class EventListener implements Listener {
                     }
 
                 }
-            }.runTaskAsynchronously(Reputify.instance);
+            }.runTask(Reputify.instance);
 
         }
     }

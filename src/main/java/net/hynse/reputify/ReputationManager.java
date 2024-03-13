@@ -13,7 +13,14 @@ public class ReputationManager {
     }
 
     public Document getPlayerReputation(UUID playerId) {
-        return mongoDBManager.getPlayerReputation(playerId);
+        Document playerReputation = mongoDBManager.getPlayerReputation(playerId);
+        if (playerReputation == null) {
+            // If player's reputation is not found, create a new document with default values
+            playerReputation = new Document("uuid", playerId.toString())
+                    .append("reputation_points", 0);
+            // You can add more default fields if needed
+        }
+        return playerReputation;
     }
 
     public void updatePlayerReputation(UUID playerId, int newPoints) {
