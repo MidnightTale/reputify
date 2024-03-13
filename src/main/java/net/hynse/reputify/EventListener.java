@@ -1,6 +1,8 @@
 package net.hynse.reputify;
 
 import me.nahu.scheduler.wrapper.runnable.WrappedRunnable;
+import org.bson.Document;
+import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -58,6 +60,7 @@ public class EventListener implements Listener {
 //                killer.sendMessage("Remaining cooldown time: " + remainingCooldown + " milliseconds");
                 return;
             }
+
 
             addRecentKill(killerId, victimId, recentKills);
             new WrappedRunnable() {
@@ -125,10 +128,22 @@ public class EventListener implements Listener {
                             logReputationChange(killer, newKillerPoints, getReputationScenario(victimPoints, killerPoints));
                             break;
                     }
+                    String message = "Reputation points ";
+                    Document updatedKillerPointsDoc = reputationManager.getPlayerReputation(killerId);
+                    int updatedKillerPoints = updatedKillerPointsDoc.getInteger("reputation_points");
+
+                    if (updatedKillerPoints > killerPoints) {
+                        message += ChatColor.GREEN + "+" + (updatedKillerPoints - killerPoints);
+                        killer.sendMessage(message);
+                    } else if (updatedKillerPoints < killerPoints) {
+                        message += ChatColor.RED + "-" + (killerPoints - updatedKillerPoints);
+                        killer.sendMessage(message);
+                    }
+
+
 
                 }
             }.runTask(Reputify.instance);
-
         }
     }
 }

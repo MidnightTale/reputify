@@ -37,11 +37,8 @@ public class Reputify extends FoliaWrappedJavaPlugin {
         }
 
         // Register events and commands
-        Objects.requireNonNull(getCommand("setrep")).setExecutor(new ReputationCommands(mongoDBManager));
-        Objects.requireNonNull(getCommand("addrep")).setExecutor(new ReputationCommands(mongoDBManager));
-        Objects.requireNonNull(getCommand("removerep")).setExecutor(new ReputationCommands(mongoDBManager));
-        Objects.requireNonNull(getCommand("viewrep")).setExecutor(new ReputationCommands(mongoDBManager));
-        Objects.requireNonNull(getCommand("tellrep")).setExecutor(new ReputationCommands(mongoDBManager));
+        Objects.requireNonNull(getCommand("rep")).setExecutor(new ReputationCommands(mongoDBManager));
+        Objects.requireNonNull(getCommand("repadmin")).setExecutor(new ReputationCommands(mongoDBManager));
         getServer().getPluginManager().registerEvents(new EventListener(reputationManager), this);
 
         getLogger().log(Level.INFO, "Reputify has been enabled.");

@@ -29,6 +29,12 @@ public class MongoDBManager {
 
     public void updatePlayerReputation(UUID playerId, int newPoints) {
         Document playerDocument = reputationCollection.find(eq("player_id", playerId.toString())).first();
+        if (playerDocument == null) {
+            // If player's document is not found, create a new document with default values
+            playerDocument = new Document("player_id", playerId.toString())
+                    .append("reputation_points", 0);
+            // You can add more default fields if needed
+        }
         int previousPoints = playerDocument.getInteger("reputation_points");
         int cappedPoints = Math.max(-100, Math.min(100, newPoints));
         Document updateDocument = new Document("$set", new Document("reputation_points", cappedPoints));
